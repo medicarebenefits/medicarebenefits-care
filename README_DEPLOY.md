@@ -9,6 +9,7 @@ Built September 23, 2026 for contract year 2026 (5,556 plans, 3,129 counties, 8,
   Firebase: enable Google sign-in; install the *Run Payments with Stripe* extension with product metadata `firebaseRole=pro`;
   upload `site_data/2026/pro/*.csv` to Storage under `pro/2026/` (storage.rules gates them to subscribers).
 - **Notifications:** `newsletter_action` (Formspree/Buttondown endpoint) → the notify card appears on every page.
+- **Analytics:** `clarity_id` (Microsoft Clarity project id) → the Clarity tag is emitted in every page head and the Privacy page discloses it. Search and email inputs carry `data-clarity-mask`.
 
 ## Compliance posture
 Informational publisher: no sales, no agent routing, no beneficiary data, no paid placement. Independence disclaimer in the
