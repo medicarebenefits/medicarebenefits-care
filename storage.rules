@@ -1,7 +1,6 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Pro exports: readable only by signed-in users the Stripe extension has marked with the 'pro' role
     match /pro/{allPaths=**} { allow read: if request.auth != null && request.auth.token.stripeRole == 'pro'; allow write: if false; }
     match /{allPaths=**} { allow read, write: if false; }
   }
