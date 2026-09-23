@@ -30,13 +30,25 @@
   // --- county search (type-ahead over /data/county_index.json)
   var s=document.querySelector('[data-county-search]');if(s){var inp=s.querySelector('input'),list=s.querySelector('ul'),idx=null,act=-1;
     function load(cb){if(idx)return cb();fetch('/data/county_index.json').then(function(r){return r.json()}).then(function(j){idx=j;cb()})}
-    function render(items){list.innerHTML='';act=-1;items.slice(0,12).forEach(function(it){var li=document.createElement('li');li.innerHTML=it.n+' <small>'+it.s+'</small>';li.addEventListener('mousedown',function(){location.href=it.u});list.appendChild(li)});list.style.display=items.length?'block':'none'}
+    function render(items,hint){list.innerHTML='';act=-1;if(hint){var h=document.createElement('li');h.className='hint';h.textContent=hint;list.appendChild(h)}
+      items.slice(0,12).forEach(function(it){var li=document.createElement('li');li.innerHTML=it.n+' <small>'+it.s+(it.z?' · ZIP '+it.z:'')+'</small>';li.addEventListener('mousedown',function(){location.href=it.u});list.appendChild(li)});list.style.display=(items.length||hint)?'block':'none'}
+    var zc={};function zipLookup(z,cb){var k=z.slice(0,3);if(zc[k])return cb(zc[k][z]||[]);fetch('/data/zip/'+k+'.json').then(function(r){return r.ok?r.json():{}}).then(function(j){zc[k]=j;cb(j[z]||[])}).catch(function(){zc[k]={};cb([])})}
     inp.addEventListener('focus',function(){load(function(){})});
-    inp.addEventListener('input',function(){var q=inp.value.trim().toLowerCase();if(q.length<2){list.style.display='none';return}load(function(){
+    inp.addEventListener('input',function(){var q=inp.value.trim().toLowerCase();
+      if(/^\d{1,5}$/.test(q)){if(q.length<5){render([],'Keep typing — enter all 5 digits of your ZIP code');return}
+        load(function(){zipLookup(q,function(fl){var byF={};idx.forEach(function(it){byF[it.f]=it});var hits=fl.map(function(f){return byF[f]}).filter(Boolean).map(function(it){return{n:it.n,s:it.s,u:it.u,z:q}});
+          render(hits,hits.length>1?'ZIP '+q+' crosses county lines — plans are filed by county, so pick the county you live in':(hits.length?null:'No Medicare Advantage plans are filed for ZIP '+q+' in the CMS files, or the ZIP is not mapped to a county. Try your county name.'))})});return}
+      if(q.length<2){list.style.display='none';return}load(function(){
       var hits=idx.filter(function(it){return it.k.indexOf(q)>-1});hits.sort(function(a,b){return a.k.indexOf(q)-b.k.indexOf(q)||a.n.localeCompare(b.n)});render(hits)})});
-    inp.addEventListener('keydown',function(e){var lis=list.querySelectorAll('li');if(!lis.length)return;if(e.key==='ArrowDown'){act=Math.min(act+1,lis.length-1)}else if(e.key==='ArrowUp'){act=Math.max(act-1,0)}else if(e.key==='Enter'){e.preventDefault();lis[act>=0?act:0].dispatchEvent(new Event('mousedown'));return}else return;
+    inp.addEventListener('keydown',function(e){var lis=list.querySelectorAll('li:not(.hint)');if(!lis.length)return;if(e.key==='ArrowDown'){act=Math.min(act+1,lis.length-1)}else if(e.key==='ArrowUp'){act=Math.max(act-1,0)}else if(e.key==='Enter'){e.preventDefault();lis[act>=0?act:0].dispatchEvent(new Event('mousedown'));return}else return;
       lis.forEach(function(l,i){l.classList.toggle('active',i===act)})});
     inp.addEventListener('blur',function(){setTimeout(function(){list.style.display='none'},150)})}
+  // --- plan pages: keep the county the visitor came from (?from=FIPS) in the breadcrumb and a back link
+  var bl=document.querySelector('[data-backlink]');if(bl){var m=location.search.match(/[?&]from=(\d{5})\b/);if(m){var a=document.querySelector('[data-service-area] a[href="/counties/'+m[1]+'.html"]');if(a){
+    var txt=a.textContent,i=txt.lastIndexOf(', '),county=i>0?txt.slice(0,i):txt,state=i>0?txt.slice(i+2):'';
+    bl.innerHTML='<a href="'+a.getAttribute('href')+'">\u2190 Back to '+county+' County, '+state+' plans</a>';bl.classList.add('on');
+    var nav=document.querySelector('[data-plan-crumbs] nav');if(nav&&state){var st=nav.querySelectorAll('a')[2];if(st){st.textContent=state;st.href='/states/'+state.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'.html';
+      var sep=document.createElement('span');sep.textContent='\u203a';var c=document.createElement('a');c.href=a.getAttribute('href');c.textContent=county+' County';st.after(sep,c)}}}}}
 })();
 window.MBC = window.MBC || {};
 MBC.initPro = function(cfg){

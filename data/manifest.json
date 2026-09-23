@@ -1,9 +1,9 @@
 {
   "contract_year": 2026,
   "plans": 5556,
-  "county_plan_rows": 128912,
-  "counties": 3129,
-  "generated_at_utc": "2026-09-22T23:49:47.098137+00:00",
+  "county_plan_rows": 129245,
+  "counties": 3137,
+  "generated_at_utc": "2026-09-23T20:31:13.207937+00:00",
   "database": "/sessions/rcw-01wac6fwkg38n17tbm3ceesk/rehearsal/cms_warehouse_v3.duckdb",
   "pipeline_version": "3.0.0"
 }
