@@ -9,6 +9,16 @@
         var nx=parseFloat(x),ny=parseFloat(y);if(!isNaN(nx)&&!isNaN(ny)){return asc?nx-ny:ny-nx}return asc?x.localeCompare(y):y.localeCompare(x)});
       rows.forEach(function(r){t.tBodies[0].appendChild(r)})})})})}
   window.MBC=window.MBC||{};MBC.sortify=sortify;sortify(document);
+  // --- choropleth tooltips (home / states / state pages); the <title> inside each shape covers screen readers
+  (function(){var tip;
+    function show(el,e){var t=el.getAttribute('data-tip');if(!t)return;if(!tip){tip=document.createElement('div');tip.className='maptip';document.body.appendChild(tip)}
+      var p=t.split('|');tip.textContent='';var b=document.createElement('b');b.textContent=p[0];tip.appendChild(b);tip.appendChild(document.createTextNode(p.slice(1).join(' · ')));tip.style.display='block';move(e)}
+    function move(e){if(!tip||tip.style.display==='none')return;var x=e.clientX+14,y=e.clientY+16,r=tip.getBoundingClientRect();
+      if(x+r.width>window.innerWidth-8)x=e.clientX-r.width-10;if(y+r.height>window.innerHeight-8)y=e.clientY-r.height-12;tip.style.left=x+'px';tip.style.top=y+'px'}
+    function hide(){if(tip)tip.style.display='none'}
+    document.querySelectorAll('figure.map [data-tip]').forEach(function(el){el.addEventListener('mouseenter',function(e){show(el,e)});el.addEventListener('mousemove',move);el.addEventListener('mouseleave',hide);
+      el.addEventListener('focus',function(){var r=el.getBoundingClientRect();show(el,{clientX:r.left+r.width/2,clientY:r.top+r.height/2})});el.addEventListener('blur',hide)});
+    window.addEventListener('scroll',hide,{passive:true})})();
   // --- simple text filter (state tables, state directory)
   var f=document.querySelector('input[data-filter]');if(f){f.addEventListener('input',function(){var q=f.value.toLowerCase();var n=0;
     document.querySelectorAll('[data-filter-row]').forEach(function(r){var ok=r.textContent.toLowerCase().indexOf(q)>-1;r.style.display=ok?'':'none';if(ok)n++});
