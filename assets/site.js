@@ -62,6 +62,9 @@
       var sep=document.createElement('span');sep.textContent='\u203a';var c=document.createElement('a');c.href=a.getAttribute('href');c.textContent=county+' County';st.after(sep,c)}}}}}
 })();
 window.MBC = window.MBC || {};
+MBC.stars=function(v,hc){var lab=function(f){return f>=4.75?'Excellent':f>=3.75?'Above average':f>=2.75?'Average':f>=1.75?'Below average':'Poor'};
+  if(v==null||v==='')return '<span class="stars none" title="CMS published no overall star rating for contract '+hc+'">Not rated</span>';var f=parseFloat(v);
+  return '<span class="stars" title="'+f.toFixed(1)+' of 5 stars for contract '+hc+' \u2014 '+lab(f)+'"><span class="glyph" aria-hidden="true"><span class="fill" style="width:'+Math.round(f/5*100)+'%">\u2605\u2605\u2605\u2605\u2605</span>\u2605\u2605\u2605\u2605\u2605</span><b>'+f.toFixed(1)+'</b><span class="sr">out of 5 stars, '+lab(f)+'</span></span>'};
 // ---------------------------------------------------------------- Part D drug coverage
 (function(){
   var cache={};MBC.getJSON=function(u){if(!cache[u])cache[u]=fetch(u).then(function(r){if(!r.ok)throw new Error(u);return r.json()});return cache[u]};
@@ -88,10 +91,10 @@ window.MBC = window.MBC || {};
         var reg=c.r?MBC.getJSON('/data/pdp/regions/'+c.r+'.json').catch(function(){return null}):Promise.resolve(null);
         return reg.then(function(rg){
           function row(p,href){var f=cov[p.fid];var t=f?(ts[p.ts]||{})[String(f[0])]:null;
-            return '<tr data-cov="'+(f?1:0)+'"><td><a href="'+href+'">'+esc(p.name)+'</a><br><small>'+esc(p.org)+(p.snp?' · '+esc(p.snp):'')+'</small></td><td class="num" data-v="'+(p.prem==null?'':p.prem)+'">'+(p.prem==null?'\u2014':MBC.money(p.prem))+'</td>'+
+            return '<tr data-cov="'+(f?1:0)+'"><td><a href="'+href+'">'+esc(p.name)+'</a><br><small>'+esc(p.org)+(p.snp?' · '+esc(p.snp):'')+'</small>'+(p.hc?'<br>'+MBC.stars(p.star,p.hc):'')+'</td><td class="num" data-v="'+(p.prem==null?'':p.prem)+'">'+(p.prem==null?'\u2014':MBC.money(p.prem))+'</td>'+
               '<td class="num" data-v="'+(p.ded==null?'':p.ded)+'">'+(p.ded==null?'\u2014':MBC.money(p.ded))+'</td><td data-v="'+(f?f[0]:99)+'">'+(f?'<span class="tierpill">'+f[0]+'</span>'+(t&&t.sp?' <small>specialty</small>':'')+(t&&!t.ded?' <small>deductible waived</small>':''):'<span class="tierpill none">Not on formulary</span>')+'</td>'+
               '<td>'+(f?MBC.flags(f[1])+(f[2]!=null?'<br><small>limit '+f[2]+' per '+f[3]+' days</small>':''):'')+'</td><td class="num">'+(f&&t?MBC.retail(t):'\u2014')+'</td><td class="num">'+(f&&t&&t.m90?MBC.cost(t.m90):'\u2014')+'</td></tr>'}
-          var ma=c.p.map(function(a){return{bid:a[0],name:a[1],org:a[2],type:a[3],snp:a[4],prem:a[5],ded:a[6],fid:a[7],ts:a[8]}});
+          var ma=c.p.map(function(a){return{bid:a[0],name:a[1],org:a[2],type:a[3],snp:a[4],prem:a[5],ded:a[6],fid:a[7],ts:a[8],star:a[9],hc:a[10]}});
           function sortp(arr){return arr.sort(function(a,b){var fa=cov[a.fid],fb=cov[b.fid];if(!!fa!==!!fb)return fa?-1:1;if(fa&&fb&&fa[0]!==fb[0])return fa[0]-fb[0];return (a.prem||0)-(b.prem||0)})}
           var head='<div class="tbl"><table data-sortable><thead><tr><th>Plan</th><th class="num">Premium</th><th class="num">Part D deductible</th><th>Tier</th><th>Restrictions</th><th class="num">30-day retail</th><th class="num">90-day mail</th></tr></thead><tbody>';
           var h='<h3>Medicare Advantage plans with drug coverage filed in '+esc(county.n)+', '+esc(county.s)+' ('+ma.length+')</h3>'+head+sortp(ma).map(function(p){return row(p,'/plans/'+p.bid+'.html?from='+county.f)}).join('')+'</tbody></table></div>';
