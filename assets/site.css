@@ -32,6 +32,11 @@ details.pro-view summary{cursor:pointer;color:var(--teal);font-weight:600;margin
 .backlink{display:none;margin:0 0 .6em;font-size:.95rem}.backlink.on{display:block}
 .procta{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:var(--teal-light);border:1px solid #CDE6E6;border-radius:10px;padding:14px 16px;margin:18px 0}.procta p{margin:0}.procta small{display:block;color:var(--muted)}
 ul.uses{padding-left:1.2em}ul.uses li{margin:.3em 0}
+.rxflag{display:inline-block;border-radius:4px;padding:0 6px;font-size:.78rem;font-weight:700;margin-right:4px;background:var(--soft);border:1px solid var(--line);color:var(--navy)}.rxflag.pa{background:#FFF4E5;border-color:#F5C88A;color:#8A4B00}.rxflag.st{background:#F3EDFF;border-color:#C9B8F5;color:#4A2A8F}.rxflag.ql{background:#EAF3FF;border-color:#B8D4F5;color:#1F4E8C}.rxflag.neg{background:var(--teal-light);border-color:#9CD1D1;color:var(--teal)}
+.tierpill{display:inline-block;min-width:2.2em;text-align:center;border-radius:6px;padding:2px 8px;font-weight:700;background:var(--navy);color:#fff;font-variant-numeric:tabular-nums}.tierpill.none{background:#fff;color:var(--muted);border:1px solid var(--line);font-weight:600}
+.az{columns:3;column-gap:24px}.az li{break-inside:avoid;margin:.15em 0;font-size:.95rem}.az h3{column-span:all;margin:1em 0 .3em;color:var(--navy)}
+.lookup-status{color:var(--muted);font-size:.9rem;margin:.4em 0}[data-results] .tbl{max-height:none}[data-results] th{position:static}
+@media (max-width:720px){.az{columns:1}}
 form.nl{display:flex;gap:8px;flex-wrap:wrap}form.nl input[type=email]{flex:1;min-width:220px;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:1rem}
 .hidden{display:none!important}.pro-state{display:none}body[data-pro="out"] div.pro-state.out,body[data-pro="in"] div.pro-state.in,body[data-pro="pro"] div.pro-state.pro,body[data-pro="off"] div.pro-state.off,body[data-pro="err"] div.pro-state.err{display:block}body[data-pro="out"] span.pro-state.out,body[data-pro="in"] span.pro-state.in,body[data-pro="pro"] span.pro-state.pro,body[data-pro="off"] span.pro-state.off,body[data-pro="err"] span.pro-state.err{display:inline}
 .ledger td{font-size:.85rem;word-break:break-all}
