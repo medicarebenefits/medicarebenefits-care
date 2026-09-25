@@ -3,7 +3,7 @@
   "plans": 5556,
   "county_plan_rows": 129245,
   "counties": 3137,
-  "generated_at_utc": "2026-09-24T05:01:49.099550+00:00",
+  "generated_at_utc": "2026-09-25T01:45:55.951901+00:00",
   "database": "C:\\Users\\gkimm\\OneDrive\\Documents\\CMS_Data\\cms_warehouse_v3.duckdb",
   "pipeline_version": "3.0.0"
 }
