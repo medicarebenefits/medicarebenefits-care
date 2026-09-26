@@ -120,6 +120,38 @@ MBC.stars=function(v,hc){var lab=function(f){return f>=4.75?'Excellent':f>=3.75?
           out.innerHTML='<h3 style="margin-top:.6em">'+esc(grp.name)+(grp.brands.length?' <small>('+esc(grp.brands.join(', '))+')</small>':'')+' on this plan\u2019s formulary</h3><div class="tbl"><table><thead><tr><th>Form / strength</th><th>Tier</th><th>Restrictions</th><th class="num">30-day retail</th><th class="num">90-day mail</th></tr></thead><tbody>'+rows+'</tbody></table></div><p><small>Tier cost sharing is the plan\u2019s initial-coverage amount as filed with CMS; PA = prior authorization, ST = step therapy, QL = quantity limit. <a href="/drugs/'+g.g+'.html">All plans covering '+esc(grp.name)+' \u2192</a></small></p>'})
       }).catch(function(e){out.innerHTML='<p class="lookup-status">Could not load drug data ('+e.message+').</p>'})})}
 })();
+(function(){
+  var el=document.querySelector('[data-pharm]');if(!el)return;
+  var bid=el.getAttribute('data-bid'),form=el.querySelector('[data-pharm-form]'),inp=form.querySelector('input[type=text]'),pref=form.querySelector('[data-pref-only]'),
+      out=el.querySelector('[data-results]'),mailOut=el.querySelector('[data-mail]'),st=el.querySelector('.lookup-status'),ri=null,rows=[],shown=25,havePref=false;
+  function status(t){st.textContent=t}
+  function bit(b64,i){if(!b64)return false;var s=atob(b64);return !!((s.charCodeAt(i>>3)>>(i&7))&1)}
+  function mi(a,b){var r=Math.PI/180,dl=(b[0]-a[0])*r,dg=(b[1]-a[1])*r,x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a[0]*r)*Math.cos(b[0]*r)*Math.sin(dg/2)*Math.sin(dg/2);return 3959*2*Math.asin(Math.sqrt(x))}
+  function tel(t){return t&&t.length===10?'<a href="tel:+1'+t+'">('+t.slice(0,3)+') '+t.slice(3,6)+'-'+t.slice(6)+'</a>':''}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  MBC.getJSON('/data/pharm/plans.json').then(function(pl){var x=pl[bid];if(!x||x[0]==null){form.style.display='none';status('CMS lists no retail pharmacy network for this plan segment.');}else{ri=x[0]}
+    if(x&&x[1]!=null)MBC.getJSON('/data/pharm/mail.json').then(function(m){var l=(m[x[1]]||[]).slice().sort(function(a,b){return b[2]-a[2]});if(!l.length)return;
+      var li=function(r){return '<li>'+esc(r[0])+(r[2]?' <span class="tag">Preferred</span>':'')+(r[1]?' · '+tel(r[1]):'')+'</li>'};
+      mailOut.innerHTML='<h3>Mail-order pharmacies in this plan&#39;s network</h3><ul>'+l.slice(0,8).map(li).join('')+'</ul>'+
+        (l.length>8?'<details><summary>'+(l.length-8)+' more pharmacies that also mail prescriptions</summary><ul>'+l.slice(8).map(li).join('')+'</ul></details>':'')})});
+  function render(){var list=rows.filter(function(r){return !pref.checked||r.pref});
+    if(!list.length){out.innerHTML='';status(pref.checked?'No preferred pharmacies in this plan’s network near that ZIP code. Untick “Preferred only” to see all network pharmacies.':'No network pharmacies found near that ZIP code in the CMS file.');return}
+    var np=rows.filter(function(r){return r.pref}).length;
+    status(rows.length+' network pharmacies within about 35 miles'+(havePref?', '+np+' of them preferred':' (this plan does not mark any of them as preferred)')+'. Closest first.');
+    out.innerHTML='<div class="tbl"><table><thead><tr><th>Pharmacy</th><th>Address</th><th>Phone</th><th class="num">Distance</th></tr></thead><tbody>'+
+      list.slice(0,shown).map(function(r){var p=r.p;return '<tr><td>'+esc(p[1])+(r.pref?' <span class="tag">Preferred</span>':'')+'</td><td>'+esc(p[2])+'<br><small>'+esc(p[3])+', '+esc(p[4])+' '+esc(p[5])+'</small></td><td>'+tel(p[6])+'</td><td class="num">'+(r.d==null?'—':(r.d<1?'&lt;1':Math.round(r.d))+' mi')+'</td></tr>'}).join('')+
+      '</tbody></table></div>'+(list.length>shown?'<p><button class="btn secondary" type="button" data-more>Show 25 more</button></p>':'');
+    var mb=out.querySelector('[data-more]');if(mb)mb.addEventListener('click',function(){shown+=25;render()})}
+  pref.addEventListener('change',function(){shown=25;if(rows.length)render()});
+  form.addEventListener('submit',function(e){e.preventDefault();var z=(inp.value.match(/\d{5}/)||[])[0];if(!z){status('Enter a 5-digit ZIP code.');return}if(ri==null)return;
+    status('Loading pharmacies…');out.innerHTML='';
+    MBC.getJSON('/data/pharm/near.json').then(function(nr){var c=nr.zip[z];if(!c){status('That ZIP code is not in the Census ZIP code list. Try a nearby residential ZIP.');return}
+      var sh=nr.near[z.slice(0,3)]||[];if(sh.indexOf(z.slice(0,3))<0)sh=[z.slice(0,3)].concat(sh);
+      return Promise.all(sh.map(function(s){return MBC.getJSON('/data/pharm/zip3/'+s+'.json').catch(function(){return null})})).then(function(parts){rows=[];havePref=false;
+        parts.forEach(function(p){if(!p)return;p.p.forEach(function(r){if(!bit(r[7],ri))return;var zc=p.z[r[5]]||nr.zip[r[5]],d=zc?mi(c,zc):null;if(d!=null&&d>35)return;
+          var pf=bit(r[8],ri);if(pf)havePref=true;rows.push({p:r,pref:pf,d:d})})});
+        rows.sort(function(a,b){return (a.d==null?999:a.d)-(b.d==null?999:b.d)||(b.pref-a.pref)});shown=25;render()})}).catch(function(){status('Could not load pharmacy data. Please try again.')})})
+})();
 MBC.initPro = function(cfg){
   var body=document.body;function state(s,msg){body.setAttribute('data-pro',s);if(msg){var e=document.querySelector('[data-pro-status]');if(e)e.textContent=msg}}
   if(!cfg.firebase||!cfg.firebase.apiKey){state('off');return}
