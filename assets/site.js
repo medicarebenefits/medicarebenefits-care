@@ -22,7 +22,8 @@
   // --- simple text filter (state tables, state directory)
   var f=document.querySelector('input[data-filter]');if(f){f.addEventListener('input',function(){var q=f.value.toLowerCase();var n=0;
     document.querySelectorAll('[data-filter-row]').forEach(function(r){var ok=r.textContent.toLowerCase().indexOf(q)>-1;r.style.display=ok?'':'none';if(ok)n++});
-    var c=document.querySelector('[data-filter-count]');if(c)c.textContent=n+' shown'})}
+    var c=document.querySelector('[data-filter-count]');if(c)c.textContent=n+' shown';
+    document.querySelectorAll('section[data-gl]').forEach(function(s){var v=false;s.querySelectorAll('[data-filter-row]').forEach(function(r){if(r.style.display!=='none')v=true});s.style.display=v?'':'none'})})}
   // --- county plan filters
   var fb=document.querySelector('[data-plan-filters]');if(fb){
     var rows=[].slice.call(document.querySelectorAll('tr[data-plan]'));var total=rows.length;
