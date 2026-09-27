@@ -41,7 +41,7 @@
     fb.addEventListener('input',apply);fb.addEventListener('change',apply);apply()}
   // --- county search (type-ahead over /data/county_index.json)
   var s=document.querySelector('[data-county-search]');if(s){var inp=s.querySelector('input'),list=s.querySelector('ul'),idx=null,act=-1;
-    function load(cb){if(idx)return cb();fetch('/data/county_index.json').then(function(r){return r.json()}).then(function(j){idx=j;cb()})}
+    function load(cb){if(idx)return cb();fetch(s.getAttribute('data-index')||'/data/county_index.json').then(function(r){return r.json()}).then(function(j){idx=j;cb()})}
     function render(items,hint){list.innerHTML='';act=-1;if(hint){var h=document.createElement('li');h.className='hint';h.textContent=hint;list.appendChild(h)}
       items.slice(0,12).forEach(function(it){var li=document.createElement('li');li.innerHTML=it.n+' <small>'+it.s+(it.z?' · ZIP '+it.z:'')+'</small>';li.addEventListener('mousedown',function(){if(s.hasAttribute('data-select-only')){inp.value=it.n+', '+it.s;list.style.display='none';s.dispatchEvent(new CustomEvent('countyselect',{detail:it}))}else{location.href=it.u}});list.appendChild(li)});list.style.display=(items.length||hint)?'block':'none'}
     var zc={};function zipLookup(z,cb){var k=z.slice(0,3);if(zc[k])return cb(zc[k][z]||[]);fetch('/data/zip/'+k+'.json').then(function(r){return r.ok?r.json():{}}).then(function(j){zc[k]=j;cb(j[z]||[])}).catch(function(){zc[k]={};cb([])})}
@@ -179,3 +179,65 @@ MBC.initPro = function(cfg){
     });
   }
 };
+// ---------------------------------------------------------------- side-by-side plan comparison (county pages)
+(function(){
+  var root=document.querySelector('[data-compare-root]');if(!root)return;
+  var data={};try{data=JSON.parse(document.getElementById('cmp-data').textContent)}catch(e){return}
+  var tray=root.querySelector('[data-cmp-tray]'),chips=tray.querySelector('[data-cmp-chips]'),panel=root.querySelector('[data-cmp-panel]');
+  var MAX=3,sel=[];
+  function boxes(){return [].slice.call(document.querySelectorAll('input[data-cmp]'))}
+  function sync(){
+    boxes().forEach(function(b){b.checked=sel.indexOf(b.value)>-1;b.disabled=(sel.length>=MAX&&!b.checked)});
+    chips.innerHTML='';sel.forEach(function(bid){var d=data[bid]||{};var c=document.createElement('span');c.className='cmpchip';
+      c.innerHTML='<b>'+(d.name||bid)+'</b>';var x=document.createElement('button');x.type='button';x.setAttribute('aria-label','Remove');x.textContent='×';
+      x.onclick=function(){toggle(bid)};c.appendChild(x);chips.appendChild(c)});
+    tray.style.display=sel.length?'flex':'none';
+    var st=tray.querySelector('[data-cmp-count]');if(st)st.textContent=sel.length+' of '+MAX+' selected';
+    try{history.replaceState(null,'',sel.length?('#compare='+sel.join(',')):location.pathname+location.search)}catch(e){}
+    if(panel.hasAttribute('data-open'))render();
+  }
+  function toggle(bid){var i=sel.indexOf(bid);if(i>-1)sel.splice(i,1);else{if(sel.length>=MAX)return;sel.push(bid)}sync()}
+  function fmtMoney(v){if(v==null||v==='')return '—';v=+v;return v===0?'$0':'$'+v.toLocaleString()}
+  function yn(v){return v===1?'Yes':(v===0?'No':'—')}
+  function allow(flag,max){if(flag!==1)return yn(flag);return max!=null?fmtMoney(max):'Reported'}
+  var ROWS=[
+    ['Carrier',function(d){return d.org||'—'}],
+    ['Plan type',function(d){return d.type||'—'}],
+    ['Contract-Plan-Segment',function(d){return d.cps||'—'}],
+    ['SNP',function(d){return d.snp&&d.snp!=='NON-SNP'?d.snp:'No'}],
+    ['Monthly premium',function(d){return fmtMoney(d.prem)}],
+    ['In-network MOOP',function(d){return fmtMoney(d.moop)}],
+    ['Part D drug deductible',function(d){return fmtMoney(d.ded)}],
+    ['Primary care copay (min)',function(d){return d.pcp!=null?fmtMoney(d.pcp):'Not filed with CMS'}],
+    ['Specialist copay (min)',function(d){return d.spec!=null?fmtMoney(d.spec):'Not filed with CMS'}],
+    ['Urgent care copay',function(d){return d.urgent!=null?fmtMoney(d.urgent):'Not filed with CMS'}],
+    ['Emergency room copay',function(d){return d.er!=null?fmtMoney(d.er):'Not filed with CMS'}],
+    ['Comprehensive dental',function(d){return allow(d.dental,d.dentalmax)}],
+    ['OTC allowance',function(d){return allow(d.otc,d.otcmax)}],
+    ['Hearing aids',function(d){return yn(d.hearing)}],
+    ['Vision exam',function(d){return yn(d.vision)}],
+    ['Eyewear',function(d){return allow(d.eyewear,d.eyewearmax)}],
+    ['Transportation',function(d){return yn(d.transport)}],
+    ['Meals',function(d){return yn(d.meals)}],
+    ['Overall star rating',function(d){return MBC.stars(d.star,d.cid||'')}],
+    ['Summary of Benefits',function(d){return d.sob?('<a href="'+d.sob+'">Open SoB</a>'):'—'}],
+    ['Full plan record',function(d){return '<a href="'+d.url+'">Open plan page</a>'}]
+  ];
+  function render(){
+    if(!sel.length){panel.removeAttribute('data-open');panel.innerHTML='';return}
+    var ds=sel.map(function(b){return data[b]||{}});
+    var h='<div class="cmphead"><h2 id="compare" style="margin:0">Side-by-side comparison</h2><button type="button" data-cmp-close class="btn secondary">Close</button></div>';
+    h+='<div class="confirm">Compare filed benefits side-by-side. This is not a recommendation. Confirm all details with the plan, <a href="https://www.medicare.gov/plan-compare" rel="noopener">Medicare.gov</a>, <a href="/help/">SHIP</a>, or 1-800-MEDICARE before enrolling.</div>';
+    h+='<div class="tbl"><table class="cmptable"><thead><tr><th>Field</th>'+ds.map(function(d){return '<th>'+(d.name||'')+'</th>'}).join('')+'</tr></thead><tbody>';
+    ROWS.forEach(function(r){h+='<tr><th scope="row">'+r[0]+'</th>'+ds.map(function(d){return '<td>'+r[1](d)+'</td>'}).join('')+'</tr>'});
+    h+='</tbody></table></div>';
+    panel.innerHTML=h;panel.setAttribute('data-open','');
+    panel.querySelector('[data-cmp-close]').onclick=function(){panel.removeAttribute('data-open');panel.innerHTML=''};
+    panel.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+  document.addEventListener('change',function(e){if(e.target&&e.target.hasAttribute&&e.target.hasAttribute('data-cmp'))toggle(e.target.value)});
+  tray.querySelector('[data-cmp-go]').onclick=render;
+  tray.querySelector('[data-cmp-clear]').onclick=function(){sel=[];panel.removeAttribute('data-open');panel.innerHTML='';sync()};
+  var m=location.hash.match(/compare=([^&]+)/);if(m){m[1].split(',').forEach(function(b){if(data[b]&&sel.length<MAX)sel.push(b)});}
+  sync();if(sel.length)render();
+})();
