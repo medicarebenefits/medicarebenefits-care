@@ -27,6 +27,12 @@
   // --- county plan filters
   var fb=document.querySelector('[data-plan-filters]');if(fb){
     var rows=[].slice.call(document.querySelectorAll('tr[data-plan]'));var total=rows.length;
+    // one-tap quick-filter chips narrow the same table (AND with the full filter bar). Keys mirror QUICK_CHIPS in the builder.
+    var chipWrap=document.querySelector('[data-quick-chips]'),activeChips=[];
+    var CHIP={zero:function(d){return parseFloat(d.prem)===0},s4:function(d){return d.stars!==''&&parseFloat(d.stars)>=4},
+      hmo:function(d){return (d.type||'').indexOf('HMO')>-1},ppo:function(d){return (d.type||'').indexOf('PPO')>-1},
+      dsnp:function(d){return (d.snp||'').indexOf('D-SNP')>-1},comprehensive_dental:function(d){return d.comprehensive_dental==='1'},
+      otc:function(d){return d.otc==='1'},hearing_aid:function(d){return d.hearing_aid==='1'},vision_exam:function(d){return d.vision_exam==='1'},transportation:function(d){return d.transportation==='1'}};
     function apply(){var q=(fb.querySelector('[name=q]').value||'').toLowerCase(),car=fb.querySelector('[name=carrier]').value,typ=fb.querySelector('[name=type]').value,snp=fb.querySelector('[name=snp]').value,
       prem=parseFloat(fb.querySelector('[name=prem]').value),moop=parseFloat(fb.querySelector('[name=moop]').value),st=parseFloat(fb.querySelector('[name=stars]').value);
       var flags=[].map.call(fb.querySelectorAll('input[type=checkbox]:checked'),function(c){return c.value});var n=0;
@@ -36,8 +42,16 @@
         if(!isNaN(prem)&&parseFloat(d.prem)>prem)ok=false;if(!isNaN(moop)&&(d.moop===''||parseFloat(d.moop)>moop))ok=false;
         if(!isNaN(st)&&st>0&&(d.stars===''||parseFloat(d.stars)<st))ok=false;
         flags.forEach(function(k){if(d[k]!=='1')ok=false});
+        activeChips.forEach(function(k){if(CHIP[k]&&!CHIP[k](d))ok=false});
         r.style.display=ok?'':'none';if(ok)n++});
       fb.querySelector('.count').textContent=total+' plans · '+n+' shown'}
+    if(chipWrap){var clr=chipWrap.querySelector('[data-quick-clear]');
+      chipWrap.querySelectorAll('.qchip').forEach(function(b){b.addEventListener('click',function(){
+        var k=b.getAttribute('data-chip'),on=b.getAttribute('aria-pressed')==='true';
+        b.setAttribute('aria-pressed',on?'false':'true');
+        activeChips=on?activeChips.filter(function(x){return x!==k}):activeChips.concat([k]);
+        if(clr)clr.hidden=!activeChips.length;apply()})});
+      if(clr)clr.addEventListener('click',function(){activeChips=[];chipWrap.querySelectorAll('.qchip').forEach(function(b){b.setAttribute('aria-pressed','false')});clr.hidden=true;apply()})}
     fb.addEventListener('input',apply);fb.addEventListener('change',apply);apply()}
   // --- county search (type-ahead over /data/county_index.json)
   var s=document.querySelector('[data-county-search]');if(s){var inp=s.querySelector('input'),list=s.querySelector('ul'),idx=null,act=-1;
