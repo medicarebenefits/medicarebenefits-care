@@ -75,6 +75,9 @@
     bl.innerHTML='<a href="'+a.getAttribute('href')+'">\u2190 Back to '+county+' County, '+state+' plans</a>';bl.classList.add('on');
     var nav=document.querySelector('[data-plan-crumbs] nav');if(nav&&state){var st=nav.querySelectorAll('a')[2];if(st){st.textContent=state;st.href='/states/'+state.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'.html';
       var sep=document.createElement('span');sep.textContent='\u203a';var c=document.createElement('a');c.href=a.getAttribute('href');c.textContent=county+' County';st.after(sep,c)}}}}}
+  // plan pages: if the visitor was comparing plans in the county they came from, offer to resume it
+  var cr=document.querySelector('[data-cmp-resume]');if(cr){var mf=location.search.match(/[?&]from=(\d{5})\b/);if(mf){try{var cb=(sessionStorage.getItem('mbccmp_'+mf[1])||'').split(',').filter(Boolean);
+    if(cb.length){cr.innerHTML='<a href="/counties/'+mf[1]+'.html#compare='+cb.join(',')+'">\u25c0 Resume comparing '+cb.length+' plan'+(cb.length>1?'s':'')+'</a>';cr.hidden=false}}catch(e){}}}
 })();
 window.MBC = window.MBC || {};
 MBC.stars=function(v,hc){var lab=function(f){return f>=4.75?'Excellent':f>=3.75?'Above average':f>=2.75?'Average':f>=1.75?'Below average':'Poor'};
@@ -199,6 +202,7 @@ MBC.initPro = function(cfg){
   var data={};try{data=JSON.parse(document.getElementById('cmp-data').textContent)}catch(e){return}
   var tray=root.querySelector('[data-cmp-tray]'),chips=tray.querySelector('[data-cmp-chips]'),panel=root.querySelector('[data-cmp-panel]');
   var MAX=3,sel=[];
+  var CKEY="mbccmp_"+((location.pathname.match(/(\d{5})/)||[])[1]||"x");  // per-county comparison persistence
   function boxes(){return [].slice.call(document.querySelectorAll('input[data-cmp]'))}
   function sync(){
     boxes().forEach(function(b){b.checked=sel.indexOf(b.value)>-1;b.disabled=(sel.length>=MAX&&!b.checked)});
@@ -208,6 +212,7 @@ MBC.initPro = function(cfg){
     tray.style.display=sel.length?'flex':'none';
     var st=tray.querySelector('[data-cmp-count]');if(st)st.textContent=sel.length+' of '+MAX+' selected';
     try{history.replaceState(null,'',sel.length?('#compare='+sel.join(',')):location.pathname+location.search)}catch(e){}
+    try{if(sel.length)sessionStorage.setItem(CKEY,sel.join(','));else sessionStorage.removeItem(CKEY)}catch(e){}
     if(panel.hasAttribute('data-open'))render();
   }
   function toggle(bid){var i=sel.indexOf(bid);if(i>-1)sel.splice(i,1);else{if(sel.length>=MAX)return;sel.push(bid)}sync()}
@@ -253,5 +258,6 @@ MBC.initPro = function(cfg){
   tray.querySelector('[data-cmp-go]').onclick=render;
   tray.querySelector('[data-cmp-clear]').onclick=function(){sel=[];panel.removeAttribute('data-open');panel.innerHTML='';sync()};
   var m=location.hash.match(/compare=([^&]+)/);if(m){m[1].split(',').forEach(function(b){if(data[b]&&sel.length<MAX)sel.push(b)});}
+  if(!sel.length){try{(sessionStorage.getItem(CKEY)||'').split(',').filter(Boolean).forEach(function(b){if(data[b]&&sel.indexOf(b)<0&&sel.length<MAX)sel.push(b)})}catch(e){}}
   sync();if(sel.length)render();
 })();

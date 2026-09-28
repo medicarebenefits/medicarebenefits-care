@@ -61,6 +61,7 @@ details.legend{margin:10px 0;font-size:.9rem;color:var(--muted)}details.legend s
 details.pro-view summary{cursor:pointer;color:var(--teal);font-weight:600;margin:12px 0}
 .delta-up{color:#0B7A3B}.delta-down{color:#B42318}
 .backlink{display:none;margin:0 0 .6em;font-size:.95rem}.backlink.on{display:block}
+.cmpresume{margin:0 0 .8em}.cmpresume a{display:inline-block;background:var(--teal-light);border:1px solid #BFE0DF;border-radius:999px;padding:6px 13px;font-size:.9rem;color:var(--teal);font-weight:600}.cmpresume a:hover{background:#d9edec;text-decoration:none}
 .procta{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:var(--teal-light);border:1px solid #CDE6E6;border-radius:10px;padding:14px 16px;margin:18px 0}.procta p{margin:0}.procta small{display:block;color:var(--muted)}
 ul.uses{padding-left:1.2em}ul.uses li{margin:.3em 0}
 .rxflag{display:inline-block;border-radius:4px;padding:0 6px;font-size:.78rem;font-weight:700;margin-right:4px;background:var(--soft);border:1px solid var(--line);color:var(--navy)}.rxflag.pa{background:#FFF4E5;border-color:#F5C88A;color:#8A4B00}.rxflag.st{background:#F3EDFF;border-color:#C9B8F5;color:#4A2A8F}.rxflag.ql{background:#EAF3FF;border-color:#B8D4F5;color:#1F4E8C}.rxflag.neg{background:var(--teal-light);border-color:#9CD1D1;color:var(--teal)}
